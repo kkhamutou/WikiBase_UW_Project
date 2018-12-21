@@ -13,8 +13,8 @@ class MultiColumnListBox(tk.Frame):
         tk.Frame.__init__(self, parent)
 
         style = ttk.Style()
-        style.configure("mystyle.Treeview", highlightthickness=0, bd=0, font=('Calibri', 13))
-        style.configure("mystyle.Treeview.Heading", font=('Calibri', 15))
+        style.configure("mystyle.Treeview", highlightthickness=0, bd=0, font=('Calibri', 11))
+        style.configure("mystyle.Treeview.Heading", font=('Calibri', 13))
         style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})])
 
         self.tree = ttk.Treeview(self, show='headings', style="mystyle.Treeview")
