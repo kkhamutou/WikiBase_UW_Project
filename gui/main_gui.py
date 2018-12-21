@@ -1,5 +1,6 @@
 import tkinter as tk
 import tkinter.font as tkfont
+from gui.wiki_window import WikiMain
 
 
 class MainPage(tk.Frame):
@@ -8,9 +9,9 @@ class MainPage(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.controller = controller
 
-        btn_return = tk.Button(self, text="Return to the start page",
+        btn_return = tk.Button(self, text="Home",
                                command=lambda: controller.show_frame("StartPage"))
-        btn_return.pack(side=tk.BOTTOM)
+        btn_return.pack(side=tk.LEFT, padx=10, pady=10)
 
 
 class Application(tk.Tk):
@@ -52,6 +53,7 @@ class StartPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
+
         label_start = tk.Label(self, text="Welcome to WikiBase!", font=controller.title_font)
         label_start.pack(side='top', fill='x', padx='10')
 
@@ -66,28 +68,12 @@ class StartPage(tk.Frame):
         btn_quit.pack()
 
 
-class WikiPage(MainPage):
+class WikiPage(WikiMain):
 
     def __init__(self, parent, controller):
-        MainPage.__init__(self, parent, controller)
-        label_start = tk.Label(self, text="Wiki Page!", font=controller.title_font)
-        label_start.pack(side='top', fill='x', padx='10', pady='30')
-
-        frame_listbox = tk.Frame(self)
-        frame_listbox.pack()
-
-        scrollbar = tk.Scrollbar(frame_listbox)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        listbox = tk.Listbox(frame_listbox, width=50, height=10)
-        listbox.pack()
-
-        for i in range(100):
-            listbox.insert(tk.END, i)
-
-        # attach listbox to scrollbar
-        listbox.config(yscrollcommand=scrollbar.set)
-        scrollbar.config(command=listbox.yview)
+        WikiMain.__init__(self, parent)
+        self.controller = controller
+        self.btn_home['command'] = lambda: controller.show_frame("StartPage")
 
 
 class GamePage(MainPage):
@@ -111,10 +97,9 @@ class TreeView(tk.Frame):
         tk.Frame.__init__(master=master)
 
 
-
-
 if __name__ == '__main__':
     app = Application()
     app.geometry('600x600')
+    app.title('WikiBase')
     app.mainloop()
 

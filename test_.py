@@ -1,102 +1,90 @@
-'''
-ttk_multicolumn_listbox2.py
-Python31 includes the Tkinter Tile extension ttk.
-Ttk comes with 17 widgets, 11 of which already exist in Tkinter:
-Button, Checkbutton, Entry, Frame, Label, LabelFrame, Menubutton,
-PanedWindow, Radiobutton, Scale and Scrollbar
-The 6 new widget classes are:
-Combobox, Notebook, Progressbar, Separator, Sizegrip and Treeview
-For additional info see the Python31 manual:
-http://gpolo.ath.cx:81/pydoc/library/ttk.html
-Here the TreeView widget is configured as a multi-column listbox
-with adjustable column width and column-header-click sorting.
-Tested with Python 3.1.1 and Tkinter 8.5
-'''
 import tkinter as tk
-import tkinter.font as tkFont
 import tkinter.ttk as ttk
+import tkinter.font as tkFont
+from api.wiki_service import WikiService, WikiHttp, Repository
 
 
-class McListBox(object):
-    """use a ttk.TreeView as a multicolumn ListBox"""
-    def __init__(self):
-        self.tree = None
-        self._setup_widgets()
-        self._build_tree()
+class Notepad(tk.Frame):
 
-    def _setup_widgets(self):
-        s = """\
-            click on header to sort by that column
-            to change width of column drag boundary
-            """
-        msg = ttk.Label(wraplength="4i", justify="left", anchor="n",
-                        padding=(10, 2, 10, 6), text=s)
-        msg.pack(fill='x')
-        container = ttk.Frame()
-        container.pack(fill='both', expand=True)
-        # create a treeview with dual scrollbars
-        self.tree = ttk.Treeview(columns=car_header, show="headings")
-        vsb = ttk.Scrollbar(orient="vertical",
-                            command=self.tree.yview)
-        hsb = ttk.Scrollbar(orient="horizontal",
-                            command=self.tree.xview)
-        self.tree.configure(yscrollcommand=vsb.set,
-                            xscrollcommand=hsb.set)
-        self.tree.grid(column=0, row=0, sticky='nsew', in_=container)
-        vsb.grid(column=1, row=0, sticky='ns', in_=container)
-        hsb.grid(column=0, row=1, sticky='ew', in_=container)
-        container.grid_columnconfigure(0, weight=1)
-        container.grid_rowconfigure(0, weight=1)
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.notepad = tk.Text(self)
+        self.notepad.pack(fill=tk.BOTH, expand=True)
 
-    def _build_tree(self):
-        for col in car_header:
-            self.tree.heading(col, text=col.title(),
-                              command=lambda c=col: sortby(self.tree, c, 0))
-            # adjust the column's width to the header string
-            self.tree.column(col,
-                             width=tkFont.Font().measure(col.title()))
-        for item in car_list:
-            self.tree.insert('', 'end', values=item)
-            # adjust column's width if necessary to fit each value
-            for ix, val in enumerate(item):
-                col_w = tkFont.Font().measure(val)
-                if self.tree.column(car_header[ix],width=None)<col_w:
-                    self.tree.column(car_header[ix], width=col_w)
+    def retrieve_input(self):
+        print(self.notepad.get('1.0', 'end-1c'))
 
 
-def sortby(tree, col, descending):
-    """sort tree contents when a column header is clicked on"""
-    # grab values to sort
-    data = [(tree.set(child, col), child) \
-            for child in tree.get_children('')]
-    # if the data to be sorted is numeric change to float
-    #data =  change_numeric(data)
-    # now sort the data in place
-    data.sort(reverse=descending)
-    for ix, item in enumerate(data):
-        tree.move(item[1], '', ix)
-    # switch the heading so it will sort in the opposite direction
-    tree.heading(col, command=lambda col=col: sortby(tree, col, \
-                                                     int(not descending)))
+class Tree(tk.Frame):
+
+    def __init__(self, parent, headers=None,  displaycolumns=None):
+        super().__init__(parent)
+
+        self.tree = ttk.Treeview(parent, show='headings')
+
+        if headers is not None:
+            self.tree['column'] = headers
+
+        if displaycolumns is not None:
+            self.tree['displaycolumns'] = displaycolumns
+
+        for header in self.tree['column']:
+            self.tree.heading(header, text=header.title())
+            self.tree.column(header, width=tkFont.Font().measure(header.title()), anchor=tk.CENTER)
+
+        self.tree.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+    def build_tree(self, items):
+
+        for key, item in items.items():
+
+            row_id = self.tree.insert('', tk.END, text=key)
+
+            for value in item:
+                self.tree.insert(row_id, tk.END, text=value)
+                col_width = tkFont.Font().measure(value)
+
+                if self.tree.column('#0', width=None) < col_width:
+                    self.tree.column('#0', width=col_width)
+
+
+def add_words(notepad: tk.Text, tree: Tree):
+
+    if len(notepad.get('1.0', 'end-1c').strip()) == 0:
+        raise ValueError
+
+    tree.tree.delete(*tree.tree.get_children())
+
+    words = notepad.get('1.0', 'end-1c').split('\n')
+    service = WikiService(wiki_http=WikiHttp(), repo=Repository())
+    suc, failed = service.get_meanings_from_wiki(words)
+
+    d = dict()
+    for klass in failed:
+        d.setdefault(klass.__class__.__name__, []).append(getattr(klass, 'title'))
+
+    tree.build_tree(d)
+
 
 
 if __name__ == '__main__':
-
-    # the test data ...
-    car_header = ['car', 'repair']
-
-    car_list = [
-        ('Hyundai', 'brakes'),
-        ('Honda', 'light'),
-        ('Lexus', 'battery'),
-        ('Benz', 'wiper'),
-        ('Ford', 'tire'),
-        ('Chevy', 'air'),
-        ('Chrysler', 'piston'),
-        ('Toyota', 'brake pedal'),
-        ('BMW', 'seat')
-            ]
     root = tk.Tk()
-    root.wm_title("multicolumn ListBox")
-    mc_listbox = McListBox()
+
+
+    #image = tk.Image(file='/Users/kirylkhamutou/IdeaProjects/WikiBase_UW_Project/gui/images/wiki_logo.png')
+    #fm = tk.Frame(root, image=image)
+    #fm.pack()
+    btn_add = tk.Button(root, text='i')
+    btn_add.pack(side=tk.TOP, expand=True, )
+
+    notepad = Notepad(root)
+    notepad.pack(side=tk.LEFT, expand=True)
+
+    tree = Tree(root)
+    tree.pack(side=tk.RIGHT, fill=tk.Y, expand=True)
+
+    btn_add = tk.Button(root, text='Add',
+                        command=lambda: add_words(notepad.notepad, tree))
+    btn_add.pack()
+
     root.mainloop()

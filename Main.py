@@ -1,6 +1,8 @@
-# Start script
+test = [['title', 'Kack', 'Max'],
+        ['search_word', '', ''],
+        ['added_date', '', '']
+        ]
 
-from api import wiki_api, response
-
-
-x = wiki_api.MediaWiki(['Kiryl', 'sdasd', 'Python programming', 'Python'])
+# [filter(lambda x: x!='null' and x!=None, inner_list) for inner_list in list_value]
+print(tuple(test[0]))
+#print(res)

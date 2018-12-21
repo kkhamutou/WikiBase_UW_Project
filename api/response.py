@@ -1,9 +1,8 @@
 """
 Algebraic data types
 Search word field
+Fc69Yh
 """
-import requests
-import json
 
 
 class Response:
@@ -13,10 +12,21 @@ class Response:
         self.title = title
 
     def __repr__(self):
-            return '{}: {}\n'.format(self.__class__.__name__ ,self.__dict__.values())
+            return '{}: {}'.format(self.__class__.__name__, self.__dict__.items())
 
     @staticmethod
-    def parse_json(json):
+    def _find_redirect_word(redirects: dict, word: str):
+        # return r['from'] for r in redirects if r['to'] == word else word
+        for r in redirects:
+            if r['to'] == word:
+                return r['from']
+
+        return word
+
+    @staticmethod
+    def parse_json(json) -> list:
+
+        redirects = json['query']['redirects'] if 'redirects' in json['query'] else dict()
         page_ids = json['query']['pageids']  # list of page ids
         res = []
 
@@ -29,7 +39,8 @@ class Response:
                 if 'pageprops' in page:
                     res.append(DisambiguationResponse(pid, title))
                 else:
-                    res.append(SuccessfulResponse(pid, title, page['extract']))
+                    res.append(SuccessfulResponse(pid, title, page['extract'],
+                                                  Response._find_redirect_word(redirects, title)))
             else:
                 if 'missing' in page:
                     res.append(MissingResponse(pid, title))
@@ -40,28 +51,24 @@ class Response:
 
 
 class MissingResponse(Response):
-
     def __init__(self, page_id, title):
         Response.__init__(self, page_id, title)
-        self.is_missing = True
 
 
 class DisambiguationResponse(Response):
     def __init__(self, page_id, title):
         Response.__init__(self, page_id, title)
-        self.is_disambiguation = True
 
 
 class InvalidResponse(Response):
     def __init__(self, page_id, title, reason):
         Response.__init__(self, page_id, title)
         self.reason = reason
-        self.is_invalid = True
-
 
 
 class SuccessfulResponse(Response):
-    def __init__(self, page_id, title, meaning):
+    def __init__(self, page_id, title, meaning, search_word):
         Response.__init__(self, page_id, title)
         self.meaning = meaning
+        self.search_word = search_word
 

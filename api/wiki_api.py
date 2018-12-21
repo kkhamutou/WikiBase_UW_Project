@@ -2,7 +2,7 @@
 wiki_api.py is a module that contains classes & functions designed for the use of MediaWiki API.
 Language of instruction: English
 URL: http://en.wikipedia.org/w/api.php
-password: NWMRaO
+password: 6GHfaG
 
 """
 import requests
@@ -90,14 +90,15 @@ class MediaWiki:
 
 
 if __name__ == '__main__':
-    word = ['Python Programming Language',
+    word = ['Python',
             'Jean Paul Sartre', 'Dance', 'Mercury', 'CEO', 'Montgomery']
 
-    word = ['aksldjalksjdkl', '[][][]', 'Python', 'Python Programming', '']
+    word = ['  aksldjalksjdkl', '[][][]', 'Python Programming', 'Python', 'natzi', '    natzi', '   NATZI   ',
+            '  nAtZi']
 
     x = MediaWiki(word)
     r = x.http_get()
 
     print(json.dumps(r, indent=4))
 
-    print(rs.Response.parse_json(r))
+    #print(rs.Response.parse_json(r))
