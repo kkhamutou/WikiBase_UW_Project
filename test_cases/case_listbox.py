@@ -27,7 +27,7 @@ class CaseListbox:
         test_case = []
         counter = 0
 
-        with open('/Users/kirylkhamutou/IdeaProjects/WikiBase_UW_Project/test_cases/words', 'r') as words:
+        with open('C:/Users/KKhamutou/IdeaProjects/WikiBase_UW_Project/test_cases/words', 'r') as words:
             for line in words:
                 counter += 1
                 if counter % interval == 0:

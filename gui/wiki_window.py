@@ -5,6 +5,7 @@ from api.wiki_service import WikiHttp, WikiService, Repository
 from os import name as os_name
 from gui.widgets.toggled_frame import ToggledFrame
 from gui.widgets.multi_listbox import MultiColumnListBox, RightClick
+from constants import DB_PATH
 
 
 class ListboxRightClick(RightClick):
@@ -40,7 +41,9 @@ class WikiMain(tk.Frame):
         tk.Frame.__init__(self, parent)
 
         self.window_add = None
-        self.repo = Repository('/Users/kirylkhamutou/IdeaProjects/WikiBase_UW_Project/repository/test_db.db')
+        self.frame_add = None
+
+        self.repo = Repository(DB_PATH)
 
         frame_top = tk.Frame(self)
         frame_top.pack(side=tk.TOP, fill=tk.X, pady=20, padx=5)
@@ -69,7 +72,8 @@ class WikiMain(tk.Frame):
         and assign Repository.filter_by method to a button <Apply>"""
 
         for index, text in enumerate(WikiMain._FILTER_NAMES):
-            tk.Label(self.tf.sub_frame, text=text.replace('_', ' ').capitalize()).grid(row=index, column=0, pady=5, sticky=tk.W)
+            tk.Label(self.tf.sub_frame,
+                     text=text.replace('_', ' ').capitalize()).grid(row=index, column=0, pady=5, sticky=tk.W)
 
             # If label name == created_date, than the combobox values == _FILTER_CRITERIA_DATE
             ttk.Combobox(self.tf.sub_frame, values=WikiMain._FILTER_CRITERIA_STRING if text != 'created_date' else
@@ -127,12 +131,13 @@ class WikiMain(tk.Frame):
             self.window_add.destroy()
 
         self.window_add = tk.Toplevel()
+
         self.window_add.geometry('600x300')
         self.window_add.title('Add new word')
 
         self.frame_add = AddWindow(self.window_add)
         self.frame_add.pack(fill=tk.BOTH, expand=True)
-        self.update_listbox()
+        self.window_add.bind("<Destroy>", lambda _: self.update_listbox() if self.frame_add.isAdded is True else None)
 
 
 class AddWindow(tk.Frame):
@@ -146,37 +151,44 @@ class AddWindow(tk.Frame):
         frame_bottom = tk.Frame(self)
         frame_bottom.pack(side=tk.TOP, expand=True, fill=tk.X, padx=10)
 
-        self.listbox = MultiColumnListBox(frame_top)
-        self.listbox.pack(side=tk.RIGHT, fill=tk.X, expand=True)
+        self.isAdded = False
 
         self.notepad = tk.Text(frame_top, height=14, width=40, relief=tk.SUNKEN, borderwidth=1)
-        self.notepad.pack(side=tk.LEFT, fill=tk.X)
+        self.notepad.pack(side=tk.LEFT, fill=tk.X, padx=4, pady=5)
 
-        self.button_reset = tk.Button(frame_bottom, text='Clear')
+        self.listbox = MultiColumnListBox(frame_top, show='tree')
+        self.listbox.pack(side=tk.RIGHT, fill=tk.X, expand=True, padx=1, pady=5)
+
+        self.button_reset = tk.Button(frame_bottom, text='Clear',
+                                      command=lambda: [self.listbox.clear(), self.notepad.delete('1.0', tk.END)])
         self.button_reset.grid(row=0, column=1)
 
         self.button_add = tk.Button(frame_bottom, text='Add', command=self.read_notepad)
         self.button_add.grid(row=0, column=2, sticky=tk.W)
 
-        self.button_close = tk.Button(frame_bottom, text='Close')
+        self.button_close = tk.Button(frame_bottom, text='Close', command=parent.destroy)
         self.button_close.grid(row=0, column=3, sticky='ne')
 
     def read_notepad(self):
+
+        self.listbox.clear()
+
         if not len(self.notepad.get('1.0', 'end-1c').strip()):
             msg.showwarning("Error", "Please, enter a value!")
-            raise ValueError("No values entered")
-
-        try:
+        else:
             wiki_service = WikiService(wiki_http=WikiHttp(),
-                                       repo=Repository('/Users/kirylkhamutou/IdeaProjects/'
-                                                       'WikiBase_UW_Project/repository/test_db.db'))
+                                       repo=Repository(DB_PATH))
             words = [word for word in self.notepad.get('1.0', 'end-1c').split('\n') if len(word) > 0]
             suc, failed = wiki_service.get_meanings_from_wiki(wiki_service.check_database(words))
-        except BaseException as err:
-            print(err)
-        else:
-            print(suc)
-            print(failed)
+
+            if len(suc) > 0:
+                self.isAdded = True
+
+            d = dict()
+            for cls in failed+suc:
+                d.setdefault(cls.__class__.__name__, []).append(getattr(cls, 'title'))
+
+            self.listbox.build_tree_from_dict(d)
 
 
 if __name__ == '__main__':

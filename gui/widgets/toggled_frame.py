@@ -1,9 +1,20 @@
-#!/toggled_frame.py Python3
+#!gui/widgets/toggled_frame.py Python3
+"""
+This module constrains ToggledFrame widget.
+"""
+
 import tkinter as tk
 import tkinter.ttk as ttk
 
 
 class ToggledFrame(tk.Frame):
+    """This is a custom widget Troggled frame.
+     Args:
+        parent: tk.Frame, tk.TopWindow, the parent object that host the tk.Frame
+            (could be another frame, top-level window, mainWindow and etc.)
+        text: str, name of a troggled button, default=''
+        sep: tuple, sigh for extend and hide, default=(+, -)
+        *args, **options: see tk.Frame documentation"""
 
     def __init__(self, parent, text='', sep=('-', '+'), *args, **options):
         tk.Frame.__init__(self, parent, *args, **options)

@@ -1,100 +1,98 @@
+# main_gui.py python3
+""" This module is design to run the GUI main application.
+The GUI is written in tkinter library.
+"""
+
+
 import tkinter as tk
 import tkinter.font as tkfont
 from gui.wiki_window import WikiMain
-
-
-class MainPage(tk.Frame):
-
-    def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
-        self.controller = controller
-
-        btn_return = tk.Button(self, text="Home",
-                               command=lambda: controller.show_frame("StartPage"))
-        btn_return.pack(side=tk.LEFT, padx=10, pady=10)
+from gui.game_window import GameMain
+from gui.stat_window import StatMain
 
 
 class Application(tk.Tk):
-
+    """This class runs the GUI tkinter application."""
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
 
         self.title_font = tkfont.Font(family='Helvetica', size=18, weight="bold", slant="italic")
 
-        # the container is where we'll stack a bunch of frames
-        # on top of each other, then the one we want visible
-        # will be raised above the others
-        container = tk.Frame(self)
-        container.pack(side="top", fill="both", expand=True)
-        container.grid_rowconfigure(0, weight=1)
-        container.grid_columnconfigure(0, weight=1)
+        self.container = tk.Frame(self)
+        self.container.pack(side="top", fill="both", expand=True)
 
-        self.frames = dict()
-        for F in (StartPage, WikiPage, GamePage, OptionPage):
-            page_name = F.__name__
-            frame = F(parent=container, controller=self)
-            self.frames[page_name] = frame
+        self.container.grid_rowconfigure(0, weight=1)
+        self.container.grid_columnconfigure(0, weight=1)
 
-            # put all of the pages in the same location;
-            # the one on the top of the stacking order
-            # will be the one that is visible.
-            frame.grid(row=0, column=0, sticky="nsew")
+        self.show_frame(StartPage)
 
-        self.show_frame("StartPage")
-
-    def show_frame(self, page_name):
+    def show_frame(self, cls):
         """Show a frame for the given page name"""
-        frame = self.frames[page_name]
+        frame = cls(parent=self.container, controller=self)
+        frame.grid(row=0, column=0, sticky="nsew")
         frame.tkraise()
 
 
 class StartPage(tk.Frame):
+    """This is the menu page that redirects to thw following windows:
+        1. Wiki - wiki window that allows you to search, view, delete and add new words from WikiMedia
+        2. Start Game - open and initialize game
+        3. Statistics - show the game statistics
+        4. Quit - terminate the application
+    """
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
 
         label_start = tk.Label(self, text="Welcome to WikiBase!", font=controller.title_font)
-        label_start.pack(side='top', fill='x', padx='10')
+        label_start.pack(side='top', fill='x', padx=15, pady=10)
 
-        btn_wiki = tk.Button(self, text="Wiki", command=lambda: controller.show_frame("WikiPage"))
-        btn_game = tk.Button(self, text="Game", command=lambda: controller.show_frame("GamePage"))
-        btn_option = tk.Button(self, text="Option", command=lambda: controller.show_frame("OptionPage"))
+        helv36 = tkfont.Font(family='Helvetica', size=12, weight='bold')
+
+        btn_wiki = tk.Button(self, text="Wiki", command=lambda: controller.show_frame(WikiPage))
+        btn_wiki.configure(heigh=3, width=20, font=helv36)
+
+        btn_game = tk.Button(self, text="Start Game", command=lambda: controller.show_frame(GamePage))
+        btn_game.configure(heigh=3, width=20, font=helv36)
+
+        btn_stat = tk.Button(self, text="Statistic", command=lambda: controller.show_frame(StatPage))
+        btn_stat.configure(heigh=3, width=20, font=helv36)
+
         btn_quit = tk.Button(self, text="Exit", command=self.quit)
+        btn_quit.configure(heigh=3, width=20, font=helv36)
 
-        btn_wiki.pack()
-        btn_game.pack()
-        btn_option.pack()
-        btn_quit.pack()
+        btn_wiki.pack(anchor=tk.CENTER, padx=10, pady=10)
+        btn_game.pack(anchor=tk.CENTER, padx=10, pady=10)
+        btn_stat.pack(anchor=tk.CENTER, padx=10, pady=10)
+        btn_quit.pack(anchor=tk.CENTER, padx=10, pady=10)
 
 
 class WikiPage(WikiMain):
+    """Initialize and open Wiki window."""
 
     def __init__(self, parent, controller):
         WikiMain.__init__(self, parent)
         self.controller = controller
-        self.btn_home['command'] = lambda: controller.show_frame("StartPage")
+        self.btn_home['command'] = lambda: controller.show_frame(StartPage)
 
 
-class GamePage(MainPage):
-
-    def __init__(self, parent, controller):
-        MainPage.__init__(self, parent, controller)
-        label_start = tk.Label(self, text="Game Page!", font=controller.title_font)
-        label_start.pack(side='top', fill='x', padx='10')
-
-
-class OptionPage(MainPage):
+class GamePage(GameMain):
+    """Initialize and open Game window."""
 
     def __init__(self, parent, controller):
-        MainPage.__init__(self, parent, controller)
-        label_start = tk.Label(self, text="Option Page!", font=controller.title_font)
-        label_start.pack(side='top', fill='x', padx='10')
+        GameMain.__init__(self, parent)
+        self.controller = controller
+        self.btn_home['command'] = lambda: controller.show_frame(StartPage) if self.exit_game_window() is True else None
 
 
-class TreeView(tk.Frame):
-    def __init__(self, master):
-        tk.Frame.__init__(master=master)
+class StatPage(StatMain):
+    """Initialize and open Statistics window."""
+
+    def __init__(self, parent, controller):
+        StatMain.__init__(self, parent)
+        self.controller = controller
+        self.btn_home['command'] = lambda: controller.show_frame(StartPage)
 
 
 if __name__ == '__main__':

@@ -2,7 +2,7 @@
 wiki_api.py is a module that contains classes & functions designed for the use of MediaWiki API.
 Language of instruction: English
 URL: http://en.wikipedia.org/w/api.php
-password: 6GHfaG
+
 
 """
 import requests

@@ -1,5 +1,6 @@
 import sqlite3
 import logging
+from constants import DB_PATH
 from collections import namedtuple
 
 logger = logging.getLogger('repository.db_setup')
@@ -54,6 +55,13 @@ class Repository:
                                 meaning TEXT NOT NULL CHECK(TYPEOF(meaning) = 'text' AND meaning != ''), 
                                 created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
                                 FOREIGN KEY(wiki_id) REFERENCES tbl_wiki(tbl_id) ON DELETE CASCADE);
+                                
+                                CREATE TABLE IF NOT EXISTS game_stat (
+                                tbl_id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                                correct_answers INTEGER, 
+                                number_of_questions INTEGER, 
+                                time_spent REAL, 
+                                created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
                                 """)
 
     @staticmethod
@@ -120,10 +128,45 @@ class Repository:
         res = self.cursor.execute(sql)
         return res.fetchall()
 
+    def get_random_words(self, questions=10) -> list:
+        res = self.cursor.execute(f'SELECT title, meaning FROM tbl_wiki ORDER BY RANDOM() LIMIT 4*{questions}')
+        return res.fetchall()
+
+    def insert_statistic(self, correct_answers: int, time_spent: int, questions=10):
+        try:
+            self.cursor.execute('BEGIN')
+            self.cursor.execute('INSERT INTO game_stat(correct_answers, number_of_questions, time_spent) '
+                                'VALUES(?, ?, ?)', (correct_answers, questions, time_spent))
+            self.cursor.execute('COMMIT')
+
+        except self.connection.Error:
+            self.cursor.execute('ROLLBACK')
+            logger.exception("Exception occurred")
+
+    def get_stat(self) -> namedtuple:
+        res = self.cursor.execute("""
+        SELECT 
+            COUNT(tbl_id) Total_number_of_games,
+            time(TOTAL(time_spent), 'unixepoch') Total_time_spent,  
+            time(AVG(time_spent), 'unixepoch') Average_time_per_game, 
+            AVG(correct_answers) Average_correct_answers_per_game, 
+            PRINTF('%.2f%', TOTAL(correct_answers)/TOTAL(number_of_questions)*100) Percentage_of_correct_answers,   
+            MAX(created_date) Last_game_played
+        FROM game_stat;
+        """)
+        return res.fetchone()
+
+    def del_stat(self) -> None:
+        self.cursor.execute(f"DELETE FROM game_stat")
+        self.connection.commit()
+
+    def get_stat2(self):
+        return self.cursor.execute("SELECT * FROM game_stat").fetchall()
+
 
 if __name__ == '__main__':
 
-    x = Repository('/Users/kirylkhamutou/IdeaProjects/WikiBase_UW_Project/repository/test_db.db')
-    r = x.filter_by(('created_date', 'title'), ('Is not equal to', 'Is not equal to'), ('2018-15-55', 'Berlin'))
+    x = Repository(DB_PATH)
 
-    print(r)
+    for attr in x.get_stat():
+        print(attr)
