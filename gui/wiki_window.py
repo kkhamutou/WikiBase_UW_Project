@@ -42,7 +42,7 @@ class WikiMain(tk.Frame):
 
         self.window_add = None
         self.frame_add = None
-
+        print(DB_PATH)
         self.repo = Repository(DB_PATH)
 
         frame_top = tk.Frame(self)

@@ -1,6 +1,6 @@
 #!api/response.py python3
 """
-In this module, I would like to show the  open/closed principle (LSP).
+In this module, I would like to show the  open/closed principle.
 The principle state tat "software entities should be open for extension, but closed for modification".
 
 Based on this principle, I tried to delegate the logic for each particular type of response to its corresponding class.
@@ -193,7 +193,11 @@ if __name__ == '__main__':
     from api.wiki_http import WikiHttp
 
     x = WikiHttp()
-    data = x.get(['Python Programming', 'This is missing', '[]This[]is[]invalid[]', 'Python'])
+    data = x.get(['accounting'])
     y = ResponseParser(data)
-    print(y[0].title)
     print(y)
+    for i in y:
+        if isinstance(i, SuccessfulResponse):
+            print(i.title)
+            print(i.meaning)
+
